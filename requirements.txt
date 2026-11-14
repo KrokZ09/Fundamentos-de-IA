@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai>=1.0   # se usa solo como cliente; las llamadas van a Gemini
+python-dotenv
+pydantic
+
+# Más adelante para Prolog:
+# pyswip

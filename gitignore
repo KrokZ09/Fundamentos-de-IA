@@ -1,0 +1,30 @@
+# Secretos (NUNCA subir)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Frontend (para cuando se haga)
+node_modules/
+dist/
+build/
+.next/
+
+# Prolog
+*.qlf
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
