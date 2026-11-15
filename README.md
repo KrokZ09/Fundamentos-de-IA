@@ -52,5 +52,22 @@ futbol-chatbot/
 ├── .env            # local, no se sube
 ├── .env.example
 ├── frontend/       # pendiente
-└── prolog/         # pendiente (reglas .pl)
+└── prolog/
+    ├── hechos.pl   # base de conocimiento (editar datos aquí)
+    ├── reglas.pl   # lógica de primer orden
+    ├── chatbot.pl  # intérprete por palabras clave + ciclo de consola
+    └── api.pl      # puente con FastAPI (stdin -> JSON)
 ```
+
+## Prolog
+
+Requiere [SWI-Prolog](https://www.swi-prolog.org/Download.html) 9.x (en Windows, marcar "Add swipl to PATH"
+o definir `SWIPL_PATH` en `.env`).
+
+```bash
+swipl prolog/chatbot.pl
+?- chat.                                   % ciclo interactivo
+?- responder('¿Dónde juega Messi?', R).    % una pregunta
+?- make.                                   % recargar tras editar un .pl
+```
+
