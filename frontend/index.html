@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot de Fútbol — Prolog vs. LLM</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Panel Lateral: Herramientas y Ficha de Jugador -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-icon">⚽</span>
+                <div>
+                    <h1>Fútbol IA</h1>
+                    <small>Lógica 1er Orden & LLM</small>
+                </div>
+            </div>
+
+            <!-- Buscador directo para GET /jugador/{nombre} -->
+            <div class="sidebar-section">
+                <h3>Ficha de Jugador</h3>
+                <form id="player-form" class="player-search">
+                    <input type="text" id="player-input" placeholder="Ej: Lionel Messi" required>
+                    <button type="submit">Buscar</button>
+                </form>
+                <div id="player-card" class="player-card empty">
+                    Busca un jugador o haz clic en una etiqueta del chat para ver su equipo, liga, país y estadio.
+                </div>
+            </div>
+
+            <!-- Preguntas rápidas de prueba -->
+            <div class="sidebar-section">
+                <h3>Consultas de Prueba</h3>
+                <div class="quick-prompts">
+                    <button type="button" class="prompt-btn">¿Dónde juega Alexis Sánchez?</button>
+                    <button type="button" class="prompt-btn">¿Qué relación hay entre Messi y Luis Suárez?</button>
+                    <button type="button" class="prompt-btn">¿En qué estadio juega Real Madrid?</button>
+                    <button type="button" class="prompt-btn">¿Qué relación tienen Haaland y Mbappé?</button>
+                </div>
+            </div>
+
+            <!-- Acceso a GET /prolog/hechos -->
+            <div class="sidebar-footer">
+                <button type="button" id="btn-open-hechos" class="btn-outline">
+                    📄 Inspeccionar Hechos Prolog
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área Principal de Chat -->
+        <main class="chat-panel">
+            <header class="topbar">
+                <div class="mode-switcher" role="group" aria-label="Selector de motor">
+                    <button type="button" class="mode-btn active" data-mode="both">
+                        ⚖️ Comparar Ambos
+                    </button>
+                    <button type="button" class="mode-btn" data-mode="prolog">
+                        🧠 Solo Prolog
+                    </button>
+                    <button type="button" class="mode-btn" data-mode="gemini">
+                        🤖 Solo Gemini
+                    </button>
+                </div>
+                <span id="status-badge" class="status-badge">Backend: localhost:8000</span>
+            </header>
+
+            <section id="messages" class="messages">
+                <div class="msg system">
+                    <p>
+                        Selecciona <strong>Comparar Ambos</strong> para evaluar una pregunta en Prolog y Gemini simultáneamente, 
+                        o elige un motor individual en la barra superior.
+                    </p>
+                </div>
+            </section>
+
+            <form id="chat-form" class="composer">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    placeholder="Pregunta dónde juega un futbolista o qué relación hay entre dos jugadores..." 
+                    autocomplete="off" 
+                    required
+                >
+                <button type="submit" id="btn-send">Enviar</button>
+            </form>
+        </main>
+    </div>
+
+    <!-- Modal para GET /prolog/hechos -->
+    <div id="modal-hechos" class="modal hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2>Base de Conocimiento (<code>GET /prolog/hechos</code>)</h2>
+                    <small>Útil para verificar cambios de conocimiento en vivo</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-refresh-hechos" class="btn-small">↻ Recargar</button>
+                    <button type="button" id="btn-close-hechos" class="btn-close">&times;</button>
+                </div>
+            </div>
+            <pre id="hechos-output">Cargando hechos...</pre>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
