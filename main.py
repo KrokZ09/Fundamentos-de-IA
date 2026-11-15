@@ -1,7 +1,9 @@
 """
 Chatbot de fútbol - Backend
-Flujo: pregunta -> Gemini extrae jugadores/intención -> Gemini da datos del jugador
-       -> reglas de relación (hoy Python, mañana Prolog) -> Gemini redacta la respuesta.
+Flujo: pregunta -> Prolog (api.pl) responde con hechos.pl y reglas.pl
+       -> si Prolog no reconoce a ningún jugador, se usa Gemini como respaldo:
+          Gemini extrae jugadores/intención -> Gemini da datos del jugador
+          -> reglas de relación en Python -> Gemini redacta la respuesta.
 
 Ejecutar:  uvicorn main:app --reload
 Docs:      http://localhost:8000/docs
@@ -9,7 +11,9 @@ Docs:      http://localhost:8000/docs
 import json
 import os
 import re
+import subprocess
 from itertools import combinations
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -28,6 +32,8 @@ if not GEMINI_API_KEY:
 client = OpenAI(
     api_key=GEMINI_API_KEY,
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    timeout=20,
+    max_retries=0,
 )
 MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
@@ -48,6 +54,7 @@ async def rate_limit_handler(request, exc):
 
 @app.exception_handler(APIError)
 async def api_error_handler(request, exc):
+    print("ERROR GEMINI:", type(exc).__name__, exc)
     return JSONResponse(
         status_code=502,
         content={"detail": "Error al consultar Gemini. Revisa tu API key y el modelo."},
@@ -112,7 +119,31 @@ def get_player_facts(nombre: str) -> dict:
     return _cache[key]
 
 
-# ---------- Reglas de relación (equivalentes a las futuras reglas Prolog) ----------
+# ---------- Puente con Prolog ----------
+API_PL = Path(__file__).parent / "prolog" / "api.pl"
+
+
+def preguntar_a_prolog(pregunta: str) -> dict:
+    """Ejecuta api.pl con la pregunta por stdin y devuelve su JSON."""
+    try:
+        r = subprocess.run(
+            ["swipl", "-q", "-s", str(API_PL), "-g", "main_api", "-t", "halt"],
+            input=pregunta, capture_output=True, text=True,
+            encoding="utf-8", timeout=10,
+        )
+    except FileNotFoundError:
+        raise HTTPException(500, "No se encontró 'swipl'. Instala SWI-Prolog y agrégalo al PATH.")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, "Prolog tardó demasiado en responder.")
+    if r.returncode != 0:
+        raise HTTPException(502, f"Error en Prolog: {r.stderr.strip()}")
+    try:
+        return json.loads(r.stdout)
+    except json.JSONDecodeError:
+        raise HTTPException(502, f"Prolog devolvió una salida no válida: {r.stdout[:200]}")
+
+
+# ---------- Reglas de relación en Python (solo las usa el respaldo con Gemini) ----------
 def _same(a, b) -> bool:
     return a is not None and b is not None and a.lower() == b.lower()
 
@@ -138,8 +169,9 @@ def to_prolog(facts: list[dict]) -> str:
 
 
 # ---------- Endpoints ----------
-@app.post("/chat", response_model=ChatOut)
-def chat(body: ChatIn):
+@app.post("/chat-gemini", response_model=ChatOut)
+def chat_gemini(body: ChatIn):
+    """Flujo solo con Gemini (también es el respaldo de /chat)."""
     if not body.message.strip():
         raise HTTPException(400, "Mensaje vacío")
 
@@ -171,6 +203,19 @@ def chat(body: ChatIn):
         ],
     )
     return ChatOut(answer=r.choices[0].message.content, players=players, relations=relations)
+
+
+@app.post("/chat", response_model=ChatOut)
+def chat(body: ChatIn):
+    """Prolog responde primero; si no reconoce a ningún jugador, usa Gemini."""
+    if not body.message.strip():
+        raise HTTPException(400, "Mensaje vacío")
+
+    resultado = preguntar_a_prolog(body.message)
+    # Depende del mensaje del caso (f) de chatbot.pl: si lo cambias allá, cámbialo aquí.
+    if "No reconozco" in resultado.get("answer", ""):
+        return chat_gemini(body)
+    return ChatOut(**resultado)
 
 
 @app.get("/jugador/{nombre}")
