@@ -35,7 +35,7 @@ client = OpenAI(
     timeout=20,
     max_retries=0,
 )
-MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 app = FastAPI(title="Chatbot de fútbol")
 app.add_middleware(  # en producción limita allow_origins a tu dominio
