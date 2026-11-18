@@ -1,5 +1,11 @@
 # Chatbot de fútbol
 
+## Integrantes
+
+- Diego Rojas
+- Cristóbal Navarro
+- Cristóbal Ramírez
+
 Backend en FastAPI. Responde dónde juega un jugador (equipo, liga, país, estadio) y qué relación
 hay entre jugadores.
 
